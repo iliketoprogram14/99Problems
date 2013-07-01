@@ -3,7 +3,7 @@ exception Empty_list;;
 exception One_element;;
 exception Not_in_bounds;;
 exception Empty_branch;;
-exception Fuck;;
+exception NotPossible;;
 exception Need_to_implement;;
 
 (* HELPFUL DATA TYPES *)
@@ -69,15 +69,14 @@ let is_empty t =
 ;;
 
 let is_both_empty l r =
-  let numl = if (is_empty l) then 0 else 1 in
-  let numr = if (is_empty r) then 0 else 1 in
-    match (numl + numr) with
-    | 0 -> Both_Empty
-    | 1 -> if numl = 0 then Left_Empty else Right_Empty
-    | 2 -> None_Empty
+  match (is_empty l, is_empty r) with
+  | (true, true) -> Both_Empty
+  | (true, false) -> Left_Empty
+  | (false, true) -> Right_Empty
+  | (false, false) -> None_Empty
 ;;
 
-  (* INSERT *)
+(* INSERT *)
 let rec insert value t =
   match t with
   | Empty -> Branch(value, Empty, Empty)
@@ -88,13 +87,12 @@ let rec insert value t =
       | Equal -> Branch(v,l,r)
 ;;
 
-  (* DELETE AND ITS HELPERS *)
+(* DELETE AND ITS HELPERS *)
 let rec delete_min t =
   match t with
-  | Empty -> raise Fuck
-  | Branch(v,l,r) -> 
-      if (is_empty l) then r
-      else Branch(v, (delete_min l), r)
+  | Empty -> raise NotPossible
+  | Branch(v,Empty,r) -> r
+  | Branch(v,l,r) -> Branch(v, (delete_min l), r)
 ;;
 
 let find_min tree =
@@ -129,7 +127,8 @@ let rec rbtree_to_tree rbt =
 
 let tree_to_rbtree t =
   let rec t_to_rbt oldt newrbt =
-    raise Need_to_implement
+    raise Need_to_implement in
+raise Need_to_implement
 ;;    
             
 let rec adjust value t =
@@ -142,58 +141,38 @@ let palinlist = [1;2;3;4;5;4;3;2;1];;
 
 
 (* 1. Find the last element of a list *)
-let last_elem lst =
-  let rec last_elem_helper l last =
-    match lst with
-    | [] -> last
-    | h::t -> last_elem_helper t h in
-    last_elem_helper lst (List.hd lst)
+let last_elem lst : 'a option = 
+  match List.rev lst with
+  | [] -> None
+  | hd::tl -> Some hd
 ;;
 
-let last_elem2 lst = 
-  List.nth lst ((List.length lst) - 1)
-;;
-
-let rec last_elem3 lst =
+let rec last_elem2 lst : 'a option=
   match lst with
-  | [] -> raise Empty_list
-  | h::[] -> h
-  | h::t -> last_elem3 t
+  | [] -> None
+  | hd::[] -> Some hd
+  | hd::tl -> last_elem2 tl
 ;;
+
 
 (* 2. Find the last but one element of a list (second to last) *)
-
-let rec sec_to_last lst =
+let rec sec_to_last lst : 'a option =
   match lst with
-  | [] -> raise Empty_list
-  | h::[] ->raise One_element
-  | h::(h1::[]) -> h
-  | _::t -> sec_to_last t
+  | [] -> None
+  | hd::[] -> None
+  | hd::(hd1::[]) -> Some hd
+  | _::tl -> sec_to_last tl
 ;;
 
-let sec_to_last2 lst =
-  List.nth lst ((List.length lst) - 2)
-;;
 
 (* 3. Find the kth element of a list (not 0-indexed) *)
 let rec kth lst k =
-  match k with
-  | 1 -> (List.hd lst)
-  | _ -> kth (List.tl lst) (k - 1)
+  match (k, lst) with
+  | (_, []) -> None
+  | (1, hd::tl) -> Some hd
+  | (_, hd::tl) -> kth tl (k-1)
 ;;
 
-
-   (* returns an option *)
-let kth2 (lst: 'a list) (k: int) =
-  let rec kth_help (l: 'a list) (n: int) (last: 'a option) =
-    match n with
-    | 0 -> last
-    | _ ->
-        match l with
-        | [] -> None
-        | h::t -> kth_help t (n - 1) (Some h) in
-    kth_help lst k None
-;;
 
 (* 4. Find the number of elements of a list *)
 let rec length lst =
@@ -202,83 +181,66 @@ let rec length lst =
   | _::t -> 1 + (length t)
 ;;
 
-let length2 lst = List.length lst;;
+let length2 lst = reduce (fun x y -> 1 + y) lst 0;;
 
-let length3 lst =
-  reduce (fun x y -> 1 + y) lst 0;;
 
 (* 5. Reverse a list *)
-let rev lst =
-  reduce (fun x y -> x::y) lst [];;
+let rev lst = reduce (fun x y -> x::y) lst [];;
 
-let rev2 lst = List.rev lst;;
 
 (* 6. Find out whether a list is a palindrome *)
 let palindrome lst =
   let rec palin_helper l1 l2 =
-    match l1 with 
-    | [] -> true
-    | _ ->
-        match (List.hd l1 == List.hd l2) with
-        | true -> palin_helper (List.tl l1) (List.tl l2)
-        | false -> false in
-    palin_helper lst (rev lst)
+    match l1, l2 with
+    | ([], []) -> true
+    | (hd::tl, hd2::tl2) -> hd = hd2 && (palin_helper tl tl2)
+    | _ -> raise NotPossible in
+  palin_helper lst (rev lst)
 ;;
+
 
 (* 7. Flatten a nested list structure *)
-let flatten lst = 
-  reduce (fun x y -> y@x) lst []
-;;
+let flatten lst = reduce (fun x y -> y@x) lst [];;
 
-let flatten2 lst = List.flatten lst;;
 
 (* 8. Eliminate consecutive duplicates of list elements *)
 let rec elim_dup lst =
   match lst with
   | [] -> []
-  | h::[] -> [h]
-  | h::(h1::t) -> 
-      match h=h1 with
-      | true -> elim_dup (h::t)
-      | false -> h::(elim_dup (h1::t))
+  | hd::[] -> [hd]
+  | hd::(hd1::tl as tl2) -> 
+      match hd=hd1 with
+      | true -> elim_dup tl2
+      | false -> hd::(elim_dup tl2)
 ;;
 
-let elim_dup2 lst =
-  let rec elim_helper l last =
-    match l with
-    | [] -> [last]
-    | h::t ->
-        match (h=last) with
-        | true -> elim_helper t last
-        | false -> last::(elim_helper t h) in
-    match lst with
-    | [] -> []
-    | h::t -> elim_helper t h
+
+(* 9. Pack consecutive duplicates of list elements into sublists.  
+ * If a list contains repeated elements, they should be placed in 
+ * separate sublists *)
+let dup (lst: 'a list) : 'a list list =
+  let rec dup_helper (l: 'a list) (sublsts: 'a list list) : 'a list list =
+    match l, sublsts with
+    | [], _ -> sublsts
+    | hd::tl, [] -> dup_helper tl [[hd]]
+    | hd::tl, []::sublist_tl -> dup_helper tl ([hd]::sublist_tl)
+    | hd::tl, (hd1::tl1)::sublist_tl ->
+      if hd = hd1 then dup_helper tl ((hd::hd1::tl1)::sublist_tl)
+      else dup_helper tl ([hd]::sublsts) in
+  List.rev (dup_helper lst [])
 ;;
 
-(* 9. Pack consecutive duplicates of list elements into sublists.  If a list contains repeated elements, they should be placed in separate sublists *)
-let dup lst =
-  let rec dup_helper l sublst last =
-    match l with
-    | [] -> [sublst]
-    | h::t ->
-        match (h = last) with
-        | true -> (dup_helper t (h::sublst) last)
-        | false -> sublst::(dup_helper t [h] h)
-  in
-    match lst with
-    | [] -> []
-    | h::t -> dup_helper t [h] h
-;;
 
 (* 10. Run-length encoding of a list *)
-let run_len_encode lst =
+let run_len_encode (lst: 'a list) : (int * 'a) list =
   List.map (fun x -> (List.length x, List.hd x)) (dup lst)
 ;;
 
+
 (* 11. Run-length encoding of a list, except those with no duplicates aren't in tuples *)
 
-(* UH IMPOSSIBLE BC DIFFERENT TYPES *)
+(* IMPOSSIBLE BECAUSE LISTS CAN ONLY HAVE ELEMENTS OF ONE TYPE *)
+
 
 (* 12. Decode run-length encoded list *)
 let run_len_decode lst : 'a list =
@@ -292,27 +254,26 @@ let run_len_decode lst : 'a list =
 
 (* 13. Direct Run Length Encoding *)
 let direct_run_len_encode lst =
-  let rec encd l cur_tuple last =
+  let rec encode l cur_tuple last =
     let (a,b) = cur_tuple in
     match l with
     | [] -> [cur_tuple]
-    | h::t ->
-        match (h = last) with
-        | true -> encd t (a+1, b) last
-        | false -> cur_tuple::(encd t (1, h) h) in
+    | hd::tl ->
+        match (hd = last) with
+        | true -> encode tl (a+1, b) last
+        | false -> cur_tuple::(encode tl (1, hd) hd) in
     match lst with
     | [] -> []
-    | h::t -> encd t (1,h) h
+    | hd::tl -> encode tl (1,hd) hd
 ;;
         
-(* 14. Duplicate the elements of a list *)
-let duplicate lst =
-  flatten (List.map (fun x -> [x]@[x]) lst)
-;;
 
-let duplicate2 lst =
-  reduce (fun x y -> y@(x::[x])) lst []
-;;
+(* 14. Duplicate the elements of a list *)
+let duplicate lst = flatten (List.map (fun x -> [x]@[x]) lst);;
+
+
+let duplicate2 lst = reduce (fun x y -> y@(x::[x])) lst [];;
+
 
 (* 15. Replicate the elements of a list n times *)
 let replicate lst num = 
@@ -323,29 +284,32 @@ let replicate lst num =
     reduce (fun x y -> y@(repeater num x)) lst []
 ;;
 
+
 (* 16. Drop every nth element from a list *)
 let drop lst n =
   let rec drop_helper l num =
-      match l with
-      | [] -> []
-      | h::t ->
-          match num with
-          | 1 -> drop_helper t n
-          | _ -> h::(drop_helper t (num - 1)) in
-    drop_helper lst n
+    match l with
+    | [] -> []
+    | h::t ->
+      match num with
+      | 1 -> drop_helper t n
+      | _ -> h::(drop_helper t (num - 1)) in
+  drop_helper lst n
 ;;
+
 
 (* 17. Split list into two parts, specified by length of first list given *)
 let rec split lst n =
   match lst with
   | [] -> (lst,[])
   | h::t ->
-      match n with
-      | 1 -> ([h], t)
-      | _ ->
-          (let (a,b) = split t (n - 1) in
-             (h::a, b))
+    match n with
+    | 1 -> ([h], t)
+    | _ ->
+      let (a,b) = split t (n - 1) in
+      (h::a, b)
 ;;
+
 
 (* 18. Extract a slice from a list (inclusive) *)
 let extract lst start endn =
@@ -353,34 +317,36 @@ let extract lst start endn =
     match en with
     | 1 -> l
     | _ -> 
-        match l with
-        | [] -> []
-        | h::t -> slice t (en - 1) in
+      match l with
+      | [] -> []
+      | h::t -> slice t (en - 1) in
   let rec extract_to_start l st en =
     match l with
     | [] -> l
     | h::t ->
-        match st with
-        | 1 -> slice l en
-        | _ -> h::(extract_to_start t (st - 1) en) in
-    extract_to_start lst start endn
+      match st with
+      | 1 -> slice l en
+      | _ -> h::(extract_to_start t (st - 1) en) in
+  extract_to_start lst start endn
 ;;
         
+
 (* 31. Determine whether a given number is prime *)
 let is_prime n =
   let rec prime n next factor_list =
     let new_factorlist = next::factor_list in
-      if n/2 >= next then
-        (match (n mod next) with
-         | 0 -> 
+    if n/2 >= next then
+      (match (n mod next) with
+      | 0 -> 
              (match List.filter (fun x -> x * next == n) new_factorlist with
-              | [] -> prime n (next + 1) new_factorlist
-              | _ -> false )
-         | _ -> prime n (next + 1) factor_list)
-      else
-        true in
-    prime n 2 [1]
+             | [] -> prime n (next + 1) new_factorlist
+             | _ -> false )
+      | _ -> prime n (next + 1) factor_list)
+    else
+      true in
+  prime n 2 [1]
 ;;
+
 
 (* 32. Determine GCF of two positive integers *)
 let gcf n1 n2 =
@@ -390,11 +356,13 @@ let gcf n1 n2 =
       match (n1 mod curr = 0) && (n2 mod curr = 0) with
       | true -> gcf_helper curr (curr + 1)
       | false -> gcf_helper factor (curr + 1) in
-    gcf_helper 1 2
+  gcf_helper 1 2
 ;;
+
 
 (* 33. Determien whether two positive integers are corprime (their GCF is 1) *)
 let coprime n1 n2 = if gcf n1 n2 > 1 then false else true;;
+
 
 (* 34.  Determine Euler's totient function phi(m) - basically it returns the number of coprime numbers less than m *)
 let phi m =
@@ -408,6 +376,7 @@ let phi m =
     phi_helper 2 1
 ;;
 
+
 (* 35/36. Determine the prime factors of a given positive integer *)
 let prime_factors n =
   let rec prime_helper curr factor_list =
@@ -416,17 +385,19 @@ let prime_factors n =
       | true -> prime_helper (curr + 1) (curr::factor_list)
       | false -> prime_helper (curr + 1) factor_list
     else factor_list in
-    List.rev (prime_helper 2 [1])
+  List.rev (prime_helper 2 [1])
 ;;
+
 
 (* 39. A list of prime numbers *)
 let rec prime_list up_to_n = 
   match up_to_n with
   | 0 -> []
   | _ ->
-      if is_prime up_to_n then (prime_list (up_to_n - 1))@[up_to_n]
-      else prime_list (up_to_n - 1)
+    if is_prime up_to_n then (prime_list (up_to_n - 1))@[up_to_n]
+    else prime_list (up_to_n - 1)
 ;;
+
 
 (* 40. Return two primes that add up to given even positive integer *)
 let goldbach n =
@@ -437,23 +408,25 @@ let goldbach n =
     match less_lst with
     | [] -> (List.nth great_lst (List.length great_lst - 1), List.hd great_lst)
     | h::t ->
-        let cur_less = List.hd less_lst in
-        let cur_greater = List.hd great_lst in
-          match (compare (cur_less + cur_greater) n) with
-          | Less -> goldbach_helper (List.tl less_lst) great_lst
-          | Greater -> goldbach_helper less_lst (great_lst)
-          | Equal -> (cur_less, cur_greater) in
-    goldbach_helper less greater
+      let cur_less = List.hd less_lst in
+      let cur_greater = List.hd great_lst in
+      match (compare (cur_less + cur_greater) n) with
+      | Less -> goldbach_helper (List.tl less_lst) great_lst
+      | Greater -> goldbach_helper less_lst (great_lst)
+      | Equal -> (cur_less, cur_greater) in
+  goldbach_helper less greater
 ;;
   
+
 (* 41. return a list of even positive integers and their Goldbach compositions given a range *) 
 let rec evens lower upper =
   match (lower = upper + 1) with
   | true -> []
   | false ->
-      if lower mod 2 = 0 then lower::(evens (lower + 1) upper)
-      else evens (lower + 1) upper
+    if lower mod 2 = 0 then lower::(evens (lower + 1) upper)
+    else evens (lower + 1) upper
 ;;
+
 
 let goldbach_range lower upper =
   let even_lst = evens lower upper in
@@ -476,14 +449,16 @@ let is_tree lst =
   List.for_all (fun x -> List.length x = 3 || List.length x = 1) lst
 ;;
 
+
 (* 55. Construct a completely balanced binary tree *)
 let rec cbal_tree num_of_subtrees =
   match num_of_subtrees with
   | 0 -> Empty
   | _ -> 
-      let split_num = num_of_subtrees/2 in
-        if num_of_subtrees mod 2 = 0 then Branch(0, (cbal_tree (split_num - 1)), (cbal_tree split_num))
-        else Branch(0, (cbal_tree split_num), (cbal_tree split_num))
+    let split_num = num_of_subtrees/2 in
+    if num_of_subtrees mod 2 = 0 then Branch(0, (cbal_tree (split_num - 1)), (cbal_tree split_num))
+    else Branch(0, (cbal_tree split_num), (cbal_tree split_num))
+
 
 (* 56. Determine whether a given binary tree is symmetric or not *)
 let is_symmetric t = 
@@ -494,22 +469,22 @@ let is_symmetric t =
       match (l_is_empty = r_is_empty) with
       | false -> false (* they are not symmetric *)
       | true -> (* they are symmetric *)
-          if l_is_empty = true then true (* reached Empty, so no more calls *)
-          else (symmetric (left l) (left r)) && (symmetric (right l) (right r))
+        if l_is_empty = true then true (* reached Empty, so no more calls *)
+        else (symmetric (left l) (left r)) && (symmetric (right l) (right r))
   in
     match t with
     | Empty -> true
     | Branch(v, l, r) -> symmetric l r
 ;;
 
-(* 57. Construct a BST from a list of integers *)
 
+(* 57. Construct a BST from a list of integers *)
 let lst_to_bst lst =
   reduce (fun x y -> insert x y) lst Empty
 ;;
 
-(* 61. Count the leaves of a binary tree *)
 
+(* 61. Count the leaves of a binary tree *)
 let leaf_counter tree =
   let rec lc_rec t num : 'b = 
     match t with
@@ -518,16 +493,16 @@ let leaf_counter tree =
     lc_rec tree 0
 ;;
 
-(* 62. Count the leaves of a binary tree in a list *)
 
+(* 62. Count the leaves of a binary tree in a list *)
 let rec lc t =
     match t with
     | Empty -> []
     | Branch(v,l,r) -> (lc l)@[v]@(lc r)
 ;;
 
-(* 62B. Collect internal nodes in a list *)
 
+(* 62B. Collect internal nodes in a list *)
 let rec lci t : 'a list =
   match t with
   | Empty -> []
