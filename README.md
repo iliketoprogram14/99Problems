@@ -16,4 +16,4 @@ You can learn more about 99 Problems in Ocaml by clicking [here](http://www.chri
 
 ## Screenshots ##
 
-![Direct encode](assets/direct_encode.png) ![Last element](assets/last_elem.png) ![Ocaml](assets/ocaml.png)
+![Direct encode](assets/direct_encode.png) ![Last element](assets/last_elem.png)
