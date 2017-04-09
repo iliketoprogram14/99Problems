@@ -13,3 +13,7 @@ Original post: First project! 99 Ocaml Problems is pretty fun and I highly recom
 Basically, each problem can be solved with a short function. Problems deal with lists, trees, and other data structures. I did these over the spring semester of my sophomore year, so I didn't have time to complete all of them. I will probably complete the rest of them later on. 
 
 You can learn more about 99 Problems in Ocaml by clicking [here](http://www.christiankissig.de/cms/index.php/programming/217-99-problems-in-ocaml).
+
+## Screenshots ##
+
+![Direct encode](assets/direct_encode.png) ![Last element](assets/last_elem.png) ![Ocaml](assets/ocaml.png)
